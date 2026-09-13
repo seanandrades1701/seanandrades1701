@@ -1,0 +1,246 @@
+from pathlib import Path
+from html import escape
+
+OUTPUT = Path("hero.svg")
+
+WIDTH = 1200
+HEIGHT = 330
+
+svg = f'''<svg xmlns="http://www.w3.org/2000/svg"
+width="{WIDTH}"
+height="{HEIGHT}"
+viewBox="0 0 {WIDTH} {HEIGHT}">
+
+<defs>
+
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#05080c"/>
+    <stop offset="55%" stop-color="#0b1118"/>
+    <stop offset="100%" stop-color="#020406"/>
+  </linearGradient>
+
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#39d353"/>
+    <stop offset="50%" stop-color="#7ee787"/>
+    <stop offset="100%" stop-color="#39d353"/>
+  </linearGradient>
+
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="4" result="blur"/>
+    <feMerge>
+      <feMergeNode in="blur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+
+  <pattern id="grid"
+           width="40"
+           height="40"
+           patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40"
+          fill="none"
+          stroke="#39d353"
+          stroke-width="0.6"
+          opacity="0.06"/>
+  </pattern>
+
+  <pattern id="scanlines"
+           width="6"
+           height="6"
+           patternUnits="userSpaceOnUse">
+    <rect width="6" height="1"
+          fill="#ffffff"
+          opacity="0.025"/>
+  </pattern>
+
+</defs>
+
+<!-- BACKGROUND -->
+
+<rect width="100%"
+      height="100%"
+      rx="24"
+      fill="url(#bg)"/>
+
+<rect width="100%"
+      height="100%"
+      rx="24"
+      fill="url(#grid)"/>
+
+<rect width="100%"
+      height="100%"
+      rx="24"
+      fill="url(#scanlines)"/>
+
+<rect x="1"
+      y="1"
+      width="{WIDTH - 2}"
+      height="{HEIGHT - 2}"
+      rx="24"
+      fill="none"
+      stroke="#30363d"
+      stroke-width="2"/>
+
+
+<!-- TOP BAR -->
+
+<circle cx="30" cy="30" r="7" fill="#ff5f56"/>
+<circle cx="53" cy="30" r="7" fill="#ffbd2e"/>
+<circle cx="76" cy="30" r="7" fill="#27c93f"/>
+
+<text x="105"
+      y="35"
+      font-family="monospace"
+      font-size="13"
+      fill="#6e7681">
+PROFILE // SYSTEM INITIALIZED
+</text>
+
+
+<!-- MAIN IDENTITY -->
+
+<text x="55"
+      y="115"
+      font-family="monospace"
+      font-size="48"
+      font-weight="bold"
+      fill="url(#accent)"
+      filter="url(#glow)">
+SEAN ANDRADES
+</text>
+
+<text x="58"
+      y="148"
+      font-family="monospace"
+      font-size="15"
+      fill="#8b949e">
+COMPUTER ENGINEERING  //  FULL-STACK  //  AI
+</text>
+
+
+<!-- STATUS -->
+
+<circle cx="61"
+        cy="190"
+        r="6"
+        fill="#39d353"
+        filter="url(#glow)"/>
+
+<text x="78"
+      y="195"
+      font-family="monospace"
+      font-size="13"
+      fill="#7ee787">
+BUILD STATUS: ACTIVE
+</text>
+
+
+<!-- SYSTEM METRICS -->
+
+<text x="58"
+      y="235"
+      font-family="monospace"
+      font-size="11"
+      fill="#6e7681">
+STACK
+</text>
+
+<text x="58"
+      y="256"
+      font-family="monospace"
+      font-size="14"
+      fill="#d0d7de">
+Python  •  C++  •  JavaScript  •  Next.js
+</text>
+
+
+<text x="58"
+      y="286"
+      font-family="monospace"
+      font-size="11"
+      fill="#6e7681">
+CURRENT FOCUS
+</text>
+
+<text x="160"
+      y="286"
+      font-family="monospace"
+      font-size="14"
+      fill="#d0d7de">
+AI SYSTEMS  •  CLOUD  •  AUTOMATION
+</text>
+
+
+<!-- RIGHT PANEL -->
+
+<rect x="820"
+      y="78"
+      width="320"
+      height="180"
+      rx="14"
+      fill="#0d1117"
+      stroke="#30363d"/>
+
+<text x="845"
+      y="108"
+      font-family="monospace"
+      font-size="11"
+      fill="#6e7681">
+SYSTEM MODULES
+</text>
+
+<text x="845"
+      y="140"
+      font-family="monospace"
+      font-size="14"
+      fill="#7ee787">
+[01] KYCORE
+</text>
+
+<text x="845"
+      y="170"
+      font-family="monospace"
+      font-size="14"
+      fill="#7ee787">
+[02] ORELDRIVE
+</text>
+
+<text x="845"
+      y="200"
+      font-family="monospace"
+      font-size="14"
+      fill="#7ee787">
+[03] SMATRA
+</text>
+
+<text x="845"
+      y="230"
+      font-family="monospace"
+      font-size="14"
+      fill="#7ee787">
+[04] CLOUD APPS
+</text>
+
+
+<!-- BOTTOM LINE -->
+
+<line x1="55"
+      y1="307"
+      x2="1145"
+      y2="307"
+      stroke="#30363d"/>
+
+<text x="55"
+      y="322"
+      font-family="monospace"
+      font-size="9"
+      fill="#484f58">
+@seanandrades1701  //  BUILD → BREAK → LEARN → SHIP
+</text>
+
+</svg>
+'''
+
+OUTPUT.write_text(svg, encoding="utf-8")
+
+print(f"Created {OUTPUT}")

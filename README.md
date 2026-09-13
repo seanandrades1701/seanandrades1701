@@ -1,64 +1,59 @@
 <div align="center">
 
-
-
-<h2><code>sean@github \~ $ ./contributions.sh</code></h2>
-
-
-
-<img src="./contrib-heatmap.svg" width="860" />
-
-
-
-<br><br>
-
-
-
-<h2><code>sean@github \~ $ whoami</code></h2>
-
-
-
-<table>
-
-<tr>
-
-<td valign="top">
-
-<img src="./avi-ascii.svg" width="370" />
-
-</td>
-
-
-
-<td valign="top">
-
-<img src="./info-card.svg" width="490" />
-
-</td>
-
-</tr>
-
-</table>
-
-
-
-<br>
-
-
-
-<h3><code>sean@github \~ $ projects</code></h3>
-
-
-
-<p>
-
-Building intelligent systems, AI-powered applications,
-
-cloud solutions, and full-stack web experiences.
-
-</p>
-
-
+<img src="./hero.svg" width="100%" />
 
 </div>
 
+<div align="center">
+
+# SEAN ANDRADES
+
+### `COMPUTER ENGINEER` · `FULL-STACK BUILDER` · `AI ENTHUSIAST`
+
+<p>
+  <a href="https://github.com/seanandrades1701">
+    <img src="https://img.shields.io/badge/GitHub-seanandrades1701-181717?style=for-the-badge&logo=github" />
+  </a>
+  <a href="https://www.linkedin.com/in/sean-andrades-4617522a9/">
+    <img src="https://img.shields.io/badge/LinkedIn-Sean%20Andrades-0A66C2?style=for-the-badge&logo=linkedin" />
+  </a>
+</p>
+
+</div>
+
+---
+
+## `01 // IDENTITY`
+
+<table>
+<tr>
+<td width="52%" align="center">
+
+<img src="./avi-ascii.svg" width="100%" />
+
+</td>
+
+<td width="48%">
+
+<img src="./info-card.svg" width="100%" />
+
+</td>
+</tr>
+</table>
+
+---
+
+## `02 // SYSTEM PROFILE`
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                     SEAN ANDRADES                            │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ROLE        Final Year Computer Engineering                 │
+│  FOCUS       Full-Stack Development + AI/ML                  │
+│  CLOUD       AWS                                              │
+│  DATABASE    MongoDB · MySQL · DynamoDB · PostgreSQL         │
+│  CURRENT     Intelligent CKYC + AI Applications              │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
