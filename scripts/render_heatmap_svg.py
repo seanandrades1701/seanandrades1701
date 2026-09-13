@@ -1,105 +1,840 @@
 import json
+from datetime import date, datetime, timedelta
 from pathlib import Path
+from html import escape
+
 
 INPUT = Path("data/contributions.json")
 OUTPUT = Path("contrib-heatmap.svg")
 
-data = json.loads(INPUT.read_text(encoding="utf-8"))
+
+# ============================================================
+# LOAD VERIFIED DATA
+# ============================================================
+
+data = json.loads(
+    INPUT.read_text(encoding="utf-8")
+)
+
 days = data["days"]
 
-# GitHub-style levels: 0 = none, 5 = highest
-PALETTE = [
-    "#161b22",
-    "#0e4429",
-    "#006d32",
-    "#26a641",
-    "#39d353",
-    "#69f0a0",
-]
+TOTAL = data["total_contributions"]
+ACTIVE = data["active_days"]
+STREAK = data["current_streak"]
+BEST = data["best_day"]
 
-CELL = 14
-GAP = 4
-STEP = CELL + GAP
 
-LEFT = 30
-TOP = 30
+# ============================================================
+# IMPORTANT:
+# USE TODAY AS THE HARD CALENDAR CUTOFF
+# ============================================================
 
-# Arrange days into weeks
+TODAY = date.today()
+
+
+# Convert JSON dates to date objects.
+by_date = {}
+
+for item in days:
+
+    item_date = date.fromisoformat(
+        item["date"]
+    )
+
+    # Never allow future dates into the visual.
+    if item_date <= TODAY:
+        by_date[item_date] = item
+
+
+if not by_date:
+    raise RuntimeError(
+        "No contribution dates available up to today."
+    )
+
+
+# The calendar MUST end at today,
+# not at the last date contained in GitHub's
+# padded calendar HTML.
+latest_date = TODAY
+
+earliest_date = min(by_date)
+
+
+# ============================================================
+# CALENDAR RANGE
+# ============================================================
+
+# Align beginning to Sunday.
+start_date = earliest_date - timedelta(
+    days=(earliest_date.weekday() + 1) % 7
+)
+
+# IMPORTANT:
+# Do NOT extend the end into the future.
+end_date = TODAY
+
+
 weeks = []
 
-for i in range(0, len(days), 7):
-    weeks.append(days[i:i + 7])
+current = start_date
 
-WIDTH = LEFT + len(weeks) * STEP + 30
-HEIGHT = TOP + 7 * STEP + 55
+while current <= end_date:
 
-svg = f'''<svg xmlns="http://www.w3.org/2000/svg"
+    week = []
+
+    for row in range(7):
+
+        current_day = current + timedelta(
+            days=row
+        )
+
+        # Do not create fake future dates.
+        if current_day > TODAY:
+            continue
+
+        item = by_date.get(
+            current_day,
+            {
+                "date": current_day.isoformat(),
+                "count": 0,
+                "level": 0,
+            },
+        )
+
+        week.append(item)
+
+    if week:
+        weeks.append(week)
+
+    current += timedelta(days=7)
+
+
+# ============================================================
+# VISUAL SETTINGS
+# ============================================================
+
+CELL = 17
+GAP = 5
+STEP = CELL + GAP
+
+LEFT = 70
+
+# More vertical separation from stat cards.
+TOP = 235
+
+GRID_WIDTH = len(weeks) * STEP
+GRID_HEIGHT = 7 * STEP
+
+WIDTH = LEFT + GRID_WIDTH + 40
+HEIGHT = TOP + GRID_HEIGHT + 135
+
+
+# ============================================================
+# COLORS
+# ============================================================
+
+PALETTE = {
+    0: "#111820",
+    1: "#123522",
+    2: "#176b35",
+    3: "#23a447",
+    4: "#39d353",
+}
+
+
+# ============================================================
+# MONTH LABELS
+# ============================================================
+
+month_labels = []
+
+previous_month = None
+
+for column, week in enumerate(weeks):
+
+    first_day = date.fromisoformat(
+        week[0]["date"]
+    )
+
+    if first_day.month != previous_month:
+
+        month_labels.append(
+            (
+                column,
+                first_day.strftime("%b").upper()
+            )
+        )
+
+        previous_month = first_day.month
+
+
+# ============================================================
+# SVG START
+# ============================================================
+
+svg = f'''<svg
+xmlns="http://www.w3.org/2000/svg"
 width="{WIDTH}"
 height="{HEIGHT}"
 viewBox="0 0 {WIDTH} {HEIGHT}">
 
-<rect width="100%" height="100%"
-      rx="14" fill="#0d1117"/>
+<defs>
 
-<text x="{LEFT}" y="20"
-      font-family="monospace"
-      font-size="13"
-      fill="#8b949e">
-sean@github:~$ contributions
+<!-- ====================================================== -->
+<!-- BACKGROUND -->
+<!-- ====================================================== -->
+
+<linearGradient
+id="background"
+x1="0"
+y1="0"
+x2="1"
+y2="1">
+
+    <stop
+    offset="0%"
+    stop-color="#04070a"/>
+
+    <stop
+    offset="50%"
+    stop-color="#0a1016"/>
+
+    <stop
+    offset="100%"
+    stop-color="#04070a"/>
+
+</linearGradient>
+
+
+<!-- ====================================================== -->
+<!-- TITLE -->
+<!-- ====================================================== -->
+
+<linearGradient
+id="title"
+x1="0"
+y1="0"
+x2="1"
+y2="0">
+
+    <stop
+    offset="0%"
+    stop-color="#39d353"/>
+
+    <stop
+    offset="50%"
+    stop-color="#7ee787"/>
+
+    <stop
+    offset="100%"
+    stop-color="#39d353"/>
+
+</linearGradient>
+
+
+<!-- ====================================================== -->
+<!-- GLOW -->
+<!-- ====================================================== -->
+
+<filter id="glow">
+
+    <feGaussianBlur
+    stdDeviation="3"
+    result="blur"/>
+
+    <feMerge>
+
+        <feMergeNode
+        in="blur"/>
+
+        <feMergeNode
+        in="SourceGraphic"/>
+
+    </feMerge>
+
+</filter>
+
+
+<!-- ====================================================== -->
+<!-- GRID -->
+<!-- ====================================================== -->
+
+<pattern
+id="grid"
+width="32"
+height="32"
+patternUnits="userSpaceOnUse">
+
+    <path
+    d="M 32 0 L 0 0 0 32"
+    fill="none"
+    stroke="#39d353"
+    stroke-width="0.5"
+    opacity="0.035"/>
+
+</pattern>
+
+
+<!-- ====================================================== -->
+<!-- SCANLINES -->
+<!-- ====================================================== -->
+
+<pattern
+id="scanlines"
+width="5"
+height="5"
+patternUnits="userSpaceOnUse">
+
+    <rect
+    width="5"
+    height="1"
+    fill="white"
+    opacity="0.018"/>
+
+</pattern>
+
+</defs>
+
+
+<!-- ====================================================== -->
+<!-- BACKGROUND -->
+<!-- ====================================================== -->
+
+<rect
+width="100%"
+height="100%"
+rx="22"
+fill="url(#background)"/>
+
+<rect
+width="100%"
+height="100%"
+rx="22"
+fill="url(#grid)"/>
+
+<rect
+width="100%"
+height="100%"
+rx="22"
+fill="url(#scanlines)"/>
+
+
+<!-- ====================================================== -->
+<!-- BORDER -->
+<!-- ====================================================== -->
+
+<rect
+x="1"
+y="1"
+width="{WIDTH - 2}"
+height="{HEIGHT - 2}"
+rx="22"
+fill="none"
+stroke="#30363d"
+stroke-width="2"/>
+
+
+<!-- ====================================================== -->
+<!-- WINDOW CONTROLS -->
+<!-- ====================================================== -->
+
+<circle
+cx="28"
+cy="28"
+r="7"
+fill="#ff5f56"/>
+
+<circle
+cx="51"
+cy="28"
+r="7"
+fill="#ffbd2e"/>
+
+<circle
+cx="74"
+cy="28"
+r="7"
+fill="#27c93f"/>
+
+
+<!-- ====================================================== -->
+<!-- BRAND -->
+<!-- ====================================================== -->
+
+<text
+x="100"
+y="33"
+font-family="monospace"
+font-size="13"
+fill="#6e7681">
+
+SEAN ANDRADES  //  GITHUB TELEMETRY
+
 </text>
-'''
 
-for week_index, week in enumerate(weeks):
-    for day_index, day in enumerate(week):
 
-        level = max(0, min(5, int(day.get("level", 0))))
+<!-- ====================================================== -->
+<!-- TITLE -->
+<!-- ====================================================== -->
 
-        x = LEFT + week_index * STEP
-        y = TOP + day_index * STEP
+<text
+x="28"
+y="78"
+font-family="monospace"
+font-size="27"
+font-weight="bold"
+fill="url(#title)"
+filter="url(#glow)">
 
-        svg += f'''
-<rect x="{x}" y="{y}"
-      width="{CELL}"
-      height="{CELL}"
-      rx="3"
-      fill="{PALETTE[level]}"/>
-'''
+CONTRIBUTION MATRIX
 
-# Legend
-legend_y = TOP + 7 * STEP + 20
-
-svg += f'''
-<text x="{LEFT}" y="{legend_y}"
-      font-family="monospace"
-      font-size="11"
-      fill="#8b949e">
-Less
 </text>
+
+
+<!-- ====================================================== -->
+<!-- STATUS -->
+<!-- ====================================================== -->
+
+<circle
+cx="{WIDTH - 105}"
+cy="68"
+r="5"
+fill="#39d353">
+
+<animate
+attributeName="opacity"
+values="1;0.25;1"
+dur="1.5s"
+repeatCount="indefinite"/>
+
+</circle>
+
+
+<text
+x="{WIDTH - 91}"
+y="73"
+font-family="monospace"
+font-size="11"
+fill="#7ee787">
+
+AUTO-SYNC
+
+</text>
+
+
+<!-- ====================================================== -->
+<!-- SUBTITLE -->
+<!-- ====================================================== -->
+
+<text
+x="30"
+y="105"
+font-family="monospace"
+font-size="11"
+fill="#8b949e">
+
+GITHUB ACTIVITY  /  LAST YEAR  /  VERIFIED DATA
+
+</text>
+
+
+<!-- ====================================================== -->
+<!-- STAT CARDS -->
+<!-- ====================================================== -->
+
+<rect
+x="25"
+y="122"
+width="175"
+height="48"
+rx="9"
+fill="#0d1117"
+stroke="#30363d"/>
+
+<rect
+x="210"
+y="122"
+width="175"
+height="48"
+rx="9"
+fill="#0d1117"
+stroke="#30363d"/>
+
+<rect
+x="395"
+y="122"
+width="175"
+height="48"
+rx="9"
+fill="#0d1117"
+stroke="#30363d"/>
+
+
+<!-- TOTAL -->
+
+<text
+x="38"
+y="141"
+font-family="monospace"
+font-size="9"
+fill="#6e7681">
+
+CONTRIBUTIONS
+
+</text>
+
+<text
+x="38"
+y="160"
+font-family="monospace"
+font-size="16"
+font-weight="bold"
+fill="#39d353">
+
+{TOTAL:,}
+
+</text>
+
+
+<!-- ACTIVE -->
+
+<text
+x="223"
+y="141"
+font-family="monospace"
+font-size="9"
+fill="#6e7681">
+
+ACTIVE DAYS
+
+</text>
+
+<text
+x="223"
+y="160"
+font-family="monospace"
+font-size="16"
+font-weight="bold"
+fill="#39d353">
+
+{ACTIVE}
+
+</text>
+
+
+<!-- STREAK -->
+
+<text
+x="408"
+y="141"
+font-family="monospace"
+font-size="9"
+fill="#6e7681">
+
+CURRENT STREAK
+
+</text>
+
+<text
+x="408"
+y="160"
+font-family="monospace"
+font-size="16"
+font-weight="bold"
+fill="#39d353">
+
+{STREAK} DAYS
+
+</text>
+
 '''
 
-for level in range(6):
-    x = LEFT + 35 + level * STEP
+
+# ============================================================
+# MONTH LABELS
+# ============================================================
+
+# Month labels are now safely separated from the cards.
+# They sit immediately above the contribution grid.
+
+for column, label in month_labels:
+
+    x = LEFT + column * STEP
 
     svg += f'''
-<rect x="{x}" y="{legend_y - 11}"
-      width="{CELL}"
-      height="{CELL}"
-      rx="3"
-      fill="{PALETTE[level]}"/>
+<text
+x="{x}"
+y="{TOP - 18}"
+font-family="monospace"
+font-size="9"
+fill="#8b949e">
+
+{label}
+
+</text>
 '''
 
+
+# ============================================================
+# DAY LABELS
+# ============================================================
+
+for label, row in [
+    ("MON", 1),
+    ("WED", 3),
+    ("FRI", 5),
+]:
+
+    y = TOP + row * STEP + 12
+
+    svg += f'''
+<text
+x="25"
+y="{y}"
+font-family="monospace"
+font-size="9"
+fill="#6e7681">
+
+{label}
+
+</text>
+'''
+
+
+# ============================================================
+# CONTRIBUTION CELLS
+# ============================================================
+
+animation_index = 0
+
+for column, week in enumerate(weeks):
+
+    for row, item in enumerate(week):
+
+        cell_date = date.fromisoformat(
+            item["date"]
+        )
+
+        # HARD FUTURE-DATE PROTECTION
+        #
+        # If today is September 14:
+        #
+        # September 15
+        # September 16
+        # September 17
+        # September 18
+        # September 19
+        #
+        # are NEVER rendered.
+
+        if cell_date > TODAY:
+            continue
+
+        x = LEFT + column * STEP
+        y = TOP + row * STEP
+
+        level = max(
+            0,
+            min(
+                4,
+                int(item.get("level", 0))
+            )
+        )
+
+        count = int(
+            item.get("count", 0)
+        )
+
+        color = PALETTE[level]
+
+        delay = animation_index * 0.007
+
+        plural = (
+            "s"
+            if count != 1
+            else ""
+        )
+
+        svg += f'''
+<rect
+x="{x}"
+y="{y}"
+width="{CELL}"
+height="{CELL}"
+rx="4"
+fill="{color}"
+stroke="#30363d"
+stroke-width="0.5"
+opacity="0">
+
+<title>
+{escape(item["date"])} — {count} contribution{plural}
+</title>
+
+<animate
+attributeName="opacity"
+from="0"
+to="1"
+dur="0.28s"
+begin="{delay:.3f}s"
+fill="freeze"/>
+
+</rect>
+'''
+
+        animation_index += 1
+
+
+# ============================================================
+# BOTTOM SECTION
+# ============================================================
+
+bottom = TOP + GRID_HEIGHT + 35
+
+
 svg += f'''
-<text x="{LEFT + 35 + 6 * STEP + 8}"
-      y="{legend_y}"
-      font-family="monospace"
-      font-size="11"
-      fill="#8b949e">
-More
+
+<line
+x1="25"
+y1="{bottom - 15}"
+x2="{WIDTH - 25}"
+y2="{bottom - 15}"
+stroke="#30363d"/>
+
+
+<!-- ====================================================== -->
+<!-- PEAK ACTIVITY -->
+<!-- ====================================================== -->
+
+<text
+x="25"
+y="{bottom + 5}"
+font-family="monospace"
+font-size="9"
+fill="#6e7681">
+
+PEAK ACTIVITY
+
+</text>
+
+
+<text
+x="25"
+y="{bottom + 27}"
+font-family="monospace"
+font-size="12"
+fill="#39d353">
+
+{escape(BEST["date"])}  //  {BEST["count"]} CONTRIBUTIONS
+
+</text>
+
+
+<!-- ====================================================== -->
+<!-- LEGEND -->
+<!-- ====================================================== -->
+
+<text
+x="{WIDTH - 245}"
+y="{bottom + 5}"
+font-family="monospace"
+font-size="9"
+fill="#6e7681">
+
+ACTIVITY LEVEL
+
+</text>
+'''
+
+
+legend_x = WIDTH - 245
+
+
+for level in range(5):
+
+    x = legend_x + 5 + level * 24
+
+    svg += f'''
+<rect
+x="{x}"
+y="{bottom + 15}"
+width="16"
+height="16"
+rx="4"
+fill="{PALETTE[level]}"/>
+'''
+
+
+svg += f'''
+
+<text
+x="{legend_x + 5}"
+y="{bottom + 47}"
+font-family="monospace"
+font-size="8"
+fill="#484f58">
+
+LESS
+
+</text>
+
+
+<text
+x="{legend_x + 101}"
+y="{bottom + 47}"
+font-family="monospace"
+font-size="8"
+fill="#484f58">
+
+MORE
+
+</text>
+
+
+<!-- ====================================================== -->
+<!-- FOOTER -->
+<!-- ====================================================== -->
+
+<text
+x="25"
+y="{HEIGHT - 17}"
+font-family="monospace"
+font-size="8"
+fill="#484f58">
+
+@seanandrades1701  •  AUTOMATED CONTRIBUTION TELEMETRY
+
 </text>
 
 </svg>
 '''
 
-OUTPUT.write_text(svg, encoding="utf-8")
 
-print(f"Created {OUTPUT}")
+# ============================================================
+# WRITE FILE
+# ============================================================
+
+OUTPUT.write_text(
+    svg,
+    encoding="utf-8"
+)
+
+
+# ============================================================
+# CONSOLE REPORT
+# ============================================================
+
+print()
+print("CONTRIBUTION MATRIX GENERATED")
+print("-" * 55)
+print(f"Contributions : {TOTAL:,}")
+print(f"Active days   : {ACTIVE}")
+print(f"Current streak: {STREAK}")
+print(
+    f"Peak activity : "
+    f"{BEST['date']} / {BEST['count']}"
+)
+print(f"Today         : {TODAY}")
+print(f"Calendar ends : {end_date}")
+print(f"Output        : {OUTPUT}")
+print()
