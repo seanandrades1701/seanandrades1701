@@ -52,7 +52,7 @@
 │                                                              │
 │  ROLE        Final Year Computer Engineering                 │
 │  FOCUS       Full-Stack Development + AI/ML                  │
-│  CLOUD       AWS                                              │
+│  CLOUD       AWS                                             │
 │  DATABASE    MongoDB · MySQL · DynamoDB · PostgreSQL         │
 │  CURRENT     Intelligent CKYC + AI Applications              │
 │                                                              │
