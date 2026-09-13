@@ -20,7 +20,6 @@ profile = [
     ("WEB", "Next.js • React • Node.js"),
     ("CLOUD", "AWS • Lambda • S3 • Cognito"),
     ("AI", "Gemini • AI/ML • OCR"),
-    ("BUILDING", "Intelligent CKYC & AI apps"),
 ]
 
 FONT_PATH = r"C:\Windows\Fonts\consola.ttf"
