@@ -1,5 +1,4 @@
 from pathlib import Path
-from html import escape
 
 OUTPUT = Path("hero.svg")
 
@@ -54,6 +53,7 @@ viewBox="0 0 {WIDTH} {HEIGHT}">
   </pattern>
 
 </defs>
+
 
 <!-- BACKGROUND -->
 
@@ -124,7 +124,15 @@ COMPUTER ENGINEERING  //  FULL-STACK  //  AI
         cy="190"
         r="6"
         fill="#39d353"
-        filter="url(#glow)"/>
+        filter="url(#glow)">
+
+  <animate
+    attributeName="opacity"
+    values="1;0.25;1"
+    dur="1.5s"
+    repeatCount="indefinite"/>
+
+</circle>
 
 <text x="78"
       y="195"
@@ -135,7 +143,7 @@ BUILD STATUS: ACTIVE
 </text>
 
 
-<!-- SYSTEM METRICS -->
+<!-- STACK -->
 
 <text x="58"
       y="235"
@@ -186,7 +194,7 @@ AI SYSTEMS  •  CLOUD  •  AUTOMATION
       font-family="monospace"
       font-size="11"
       fill="#6e7681">
-SYSTEM MODULES
+CORE TECHNOLOGIES
 </text>
 
 <text x="845"
@@ -194,7 +202,7 @@ SYSTEM MODULES
       font-family="monospace"
       font-size="14"
       fill="#7ee787">
-[01] KYCORE
+[01] PYTHON
 </text>
 
 <text x="845"
@@ -202,7 +210,7 @@ SYSTEM MODULES
       font-family="monospace"
       font-size="14"
       fill="#7ee787">
-[02] ORELDRIVE
+[02] NEXT.JS
 </text>
 
 <text x="845"
@@ -210,7 +218,7 @@ SYSTEM MODULES
       font-family="monospace"
       font-size="14"
       fill="#7ee787">
-[03] SMATRA
+[03] AWS
 </text>
 
 <text x="845"
@@ -218,7 +226,7 @@ SYSTEM MODULES
       font-family="monospace"
       font-size="14"
       fill="#7ee787">
-[04] CLOUD APPS
+[04] AI / ML
 </text>
 
 

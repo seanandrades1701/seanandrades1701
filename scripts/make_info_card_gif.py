@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 OUTPUT = Path("info-card.gif")
 
 WIDTH = 620
-HEIGHT = 390
+HEIGHT = 350
 
 FPS = 12
 
@@ -22,7 +22,6 @@ profile = [
     ("AI", "Gemini • AI/ML • OCR"),
     ("BUILDING", "Intelligent CKYC & AI apps"),
 ]
-
 
 FONT_PATH = r"C:\Windows\Fonts\consola.ttf"
 
@@ -63,7 +62,7 @@ def draw_base():
 
     draw = ImageDraw.Draw(image)
 
-    # Outer border.
+    # Outer border
     draw.rounded_rectangle(
         (
             1,
@@ -76,7 +75,7 @@ def draw_base():
         width=2
     )
 
-    # Window controls.
+    # Window controls
     draw.ellipse(
         (18, 18, 31, 31),
         fill="#ff5f56"
@@ -92,7 +91,7 @@ def draw_base():
         fill="#27c93f"
     )
 
-    # Heading.
+    # Heading
     draw.text(
         (25, 55),
         "WHO AM I",
@@ -103,14 +102,35 @@ def draw_base():
     return image
 
 
-# Build each role animation.
+def draw_profile(draw):
+
+    for index, (key, value) in enumerate(profile):
+
+        y = 145 + index * 38
+
+        draw.text(
+            (25, y),
+            key,
+            font=small_font,
+            fill="#6e7681"
+        )
+
+        draw.text(
+            (175, y),
+            value,
+            font=text_font,
+            fill="#d0d7de"
+        )
+
+
+# -------------------------------------------------
+# CREATE ANIMATION
+# -------------------------------------------------
+
 for role in roles:
 
-    # Typing.
-    for count in range(
-        1,
-        len(role) + 1
-    ):
+    # TYPE
+    for count in range(1, len(role) + 1):
 
         image = draw_base()
         draw = ImageDraw.Draw(image)
@@ -131,7 +151,6 @@ for role in roles:
             fill="#39d353"
         )
 
-        # Cursor.
         cursor_x = 47 + int(
             draw.textlength(
                 typed,
@@ -146,29 +165,12 @@ for role in roles:
             fill="#39d353"
         )
 
-        # Profile.
-        for index, (key, value) in enumerate(profile):
-
-            y = 145 + index * 38
-
-            draw.text(
-                (25, y),
-                key,
-                font=small_font,
-                fill="#6e7681"
-            )
-
-            draw.text(
-                (175, y),
-                value,
-                font=text_font,
-                fill="#d0d7de"
-            )
+        draw_profile(draw)
 
         frames.append(image)
 
 
-    # Hold completed phrase.
+    # HOLD
     for _ in range(FPS * 2):
 
         image = draw_base()
@@ -188,33 +190,13 @@ for role in roles:
             fill="#39d353"
         )
 
-        for index, (key, value) in enumerate(profile):
-
-            y = 145 + index * 38
-
-            draw.text(
-                (25, y),
-                key,
-                font=small_font,
-                fill="#6e7681"
-            )
-
-            draw.text(
-                (175, y),
-                value,
-                font=text_font,
-                fill="#d0d7de"
-            )
+        draw_profile(draw)
 
         frames.append(image)
 
 
-    # Delete characters.
-    for count in range(
-        len(role),
-        0,
-        -1
-    ):
+    # DELETE
+    for count in range(len(role), 0, -1):
 
         image = draw_base()
         draw = ImageDraw.Draw(image)
@@ -249,28 +231,15 @@ for role in roles:
             fill="#39d353"
         )
 
-        for index, (key, value) in enumerate(profile):
-
-            y = 145 + index * 38
-
-            draw.text(
-                (25, y),
-                key,
-                font=small_font,
-                fill="#6e7681"
-            )
-
-            draw.text(
-                (175, y),
-                value,
-                font=text_font,
-                fill="#d0d7de"
-            )
+        draw_profile(draw)
 
         frames.append(image)
 
 
-# Save animated GIF.
+# -------------------------------------------------
+# SAVE GIF
+# -------------------------------------------------
+
 frames[0].save(
     OUTPUT,
     save_all=True,
