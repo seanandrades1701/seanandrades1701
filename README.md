@@ -27,13 +27,13 @@
 
 <td width="42%" align="center">
 
-<img src="./source-photo.png" width="280" />
+<img src="./github-logo-ascii.gif" width="280" />
 
 </td>
 
 <td width="58%">
 
-<img src="./info-card.svg" width="100%" />
+<img src="./info-card.gif" width="100%" />
 
 </td>
 
