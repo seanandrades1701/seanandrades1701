@@ -50,7 +50,59 @@ SEAN ANDRADES
 Final Year Computer Engineering
 Full-Stack Development + AI/ML
 
-Python • C++ • JavaScript
-Next.js • React • Node.js
-AWS • MongoDB • PostgreSQL
-Gemini AI • OCR • Computer Vision
+Python - C++ - JavaScript
+Next.js - React.js - Node.js
+AWS - MongoDB - PostgreSQL
+Gemini AI - OCR - Computer Vision
+```
+
+### TECH STACK
+
+`Python` `C++` `JavaScript` `SQL`
+
+`Next.js` `React.js` `Node.js` `Express.js`
+
+`MongoDB` `MySQL` `PostgreSQL` `DynamoDB` `Prisma`
+
+`AWS Lambda` `API Gateway` `S3` `Cognito`
+
+`Gemini AI` `OCR` `AI/ML`
+
+---
+
+## CONTRIBUTIONS
+
+<div align="center">
+
+<img src="./contrib-heatmap.svg" width="100%" />
+
+</div>
+
+
+## EDUCATION
+
+**B.E. Computer Engineering**  
+St. Francis Institute of Technology  
+`Aug 2023 - Present`
+
+**XII - HSC**  
+Thomas Baptista High School  
+`70.5% - 2023`
+
+**X - ICSE**  
+St. Xavier's English Medium School  
+`88.6% - 2021`
+
+---
+
+<div align="center">
+
+### BUILD - BREAK - LEARN - SHIP
+
+<br>
+
+<a href="mailto:seanvilasandrades@gmail.com">
+<img src="https://img.shields.io/badge/Email-Contact-181717?style=for-the-badge&logo=gmail">
+</a>
+
+</div>
