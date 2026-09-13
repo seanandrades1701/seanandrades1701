@@ -20,6 +20,15 @@
 
 <br>
 
+## CONTRIBUTIONS
+
+<div align="center">
+
+<img src="./contrib-heatmap.svg" width="100%" />
+
+</div>
+
+
 ## IDENTITY
 
 <table>
@@ -69,15 +78,6 @@ Gemini AI - OCR - Computer Vision
 `Gemini AI` `OCR` `AI/ML`
 
 ---
-
-## CONTRIBUTIONS
-
-<div align="center">
-
-<img src="./contrib-heatmap.svg" width="100%" />
-
-</div>
-
 
 ## EDUCATION
 
