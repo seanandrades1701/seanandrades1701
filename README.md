@@ -4,56 +4,53 @@
 
 </div>
 
+<br>
+
 <div align="center">
 
-# SEAN ANDRADES
+<a href="https://github.com/seanandrades1701">
+<img src="https://img.shields.io/badge/GitHub-seanandrades1701-181717?style=for-the-badge&logo=github">
+</a>
 
-### `COMPUTER ENGINEER` · `FULL-STACK BUILDER` · `AI ENTHUSIAST`
-
-<p>
-  <a href="https://github.com/seanandrades1701">
-    <img src="https://img.shields.io/badge/GitHub-seanandrades1701-181717?style=for-the-badge&logo=github" />
-  </a>
-  <a href="https://www.linkedin.com/in/sean-andrades-4617522a9/">
-    <img src="https://img.shields.io/badge/LinkedIn-Sean%20Andrades-0A66C2?style=for-the-badge&logo=linkedin" />
-  </a>
-</p>
+<a href="https://www.linkedin.com/in/sean-andrades-4617522a9/">
+<img src="https://img.shields.io/badge/LinkedIn-Sean%20Andrades-0A66C2?style=for-the-badge&logo=linkedin">
+</a>
 
 </div>
 
----
+<br>
 
-## `01 // IDENTITY`
+## IDENTITY
 
 <table>
 <tr>
-<td width="52%" align="center">
 
-<img src="./avi-ascii.svg" width="100%" />
+<td width="42%" align="center">
+
+<img src="./source-photo.png" width="280" />
 
 </td>
 
-<td width="48%">
+<td width="58%">
 
 <img src="./info-card.svg" width="100%" />
 
 </td>
+
 </tr>
 </table>
 
 ---
 
-## `02 // SYSTEM PROFILE`
+## PROFILE
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│                     SEAN ANDRADES                            │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ROLE        Final Year Computer Engineering                 │
-│  FOCUS       Full-Stack Development + AI/ML                  │
-│  CLOUD       AWS                                             │
-│  DATABASE    MongoDB · MySQL · DynamoDB · PostgreSQL         │
-│  CURRENT     Intelligent CKYC + AI Applications              │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+SEAN ANDRADES
+
+Final Year Computer Engineering
+Full-Stack Development + AI/ML
+
+Python • C++ • JavaScript
+Next.js • React • Node.js
+AWS • MongoDB • PostgreSQL
+Gemini AI • OCR • Computer Vision
