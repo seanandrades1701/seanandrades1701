@@ -21,7 +21,6 @@ profile = [
     ("CLOUD", "AWS • Lambda • S3 • Cognito"),
     ("AI", "Gemini • AI/ML • OCR"),
     ("BUILDING", "Intelligent CKYC & AI apps"),
-    ("PROJECTS", "KYCore • OrelDrive • SmaTra"),
 ]
 
 
