@@ -1,762 +1,445 @@
 import json
-from datetime import date, timedelta
+import re
+from datetime import datetime, timezone
 from pathlib import Path
-from html import escape
+
+import requests
+from bs4 import BeautifulSoup
 
 
-INPUT = Path("data/contributions.json")
-OUTPUT = Path("contrib-heatmap.svg")
+USERNAME = "seanandrades1701"
 
-
-# ============================================================
-# LOAD VERIFIED DATA
-# ============================================================
-
-data = json.loads(
-    INPUT.read_text(encoding="utf-8")
+URL = (
+    f"https://github.com/users/"
+    f"{USERNAME}/contributions"
 )
 
-days = data["days"]
+OUTPUT = Path("data/contributions.json")
 
-TOTAL = data["total_contributions"]
-ACTIVE = data["active_days"]
-STREAK = data["current_streak"]
-BEST = data["best_day"]
-
-
-by_date = {
-    date.fromisoformat(item["date"]): item
-    for item in days
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/140.0 Safari/537.36"
+    )
 }
 
 
-# ============================================================
-# CALENDAR RANGE
-# ============================================================
-
-latest_date = max(by_date)
-earliest_date = min(by_date)
-
-# Sunday → Saturday calendar alignment
-start_date = earliest_date - timedelta(
-    days=(earliest_date.weekday() + 1) % 7
-)
-
-end_date = latest_date + timedelta(
-    days=6 - ((latest_date.weekday() + 1) % 7)
-)
-
-
-weeks = []
-
-current = start_date
-
-while current <= end_date:
-
-    week = []
-
-    for row in range(7):
-
-        current_day = current + timedelta(
-            days=row
-        )
-
-        item = by_date.get(
-            current_day,
-            {
-                "date": current_day.isoformat(),
-                "count": 0,
-                "level": 0,
-            },
-        )
-
-        week.append(item)
-
-    weeks.append(week)
-
-    current += timedelta(days=7)
-
-
-# ============================================================
-# VISUAL SETTINGS
-# ============================================================
-
-CELL = 17
-GAP = 5
-STEP = CELL + GAP
-
-LEFT = 70
-TOP = 185
-
-GRID_WIDTH = len(weeks) * STEP
-GRID_HEIGHT = 7 * STEP
-
-WIDTH = LEFT + GRID_WIDTH + 40
-HEIGHT = TOP + GRID_HEIGHT + 135
-
-
-PALETTE = {
-    0: "#111820",
-    1: "#123522",
-    2: "#176b35",
-    3: "#23a447",
-    4: "#39d353",
+MONTHS = {
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
 }
 
 
-# ============================================================
-# MONTH LABELS
-# ============================================================
+def get_count_from_element(cell):
+    attributes = [
+        "data-count",
+        "data-contributions",
+        "aria-label",
+        "title",
+    ]
 
-month_labels = []
+    for attribute in attributes:
+        value = cell.get(attribute)
 
-previous_month = None
+        if not value:
+            continue
 
-for column, week in enumerate(weeks):
+        match = re.search(
+            r"(\d[\d,]*)\s+contributions?",
+            str(value),
+            re.IGNORECASE,
+        )
 
-    first_day = date.fromisoformat(
-        week[0]["date"]
+        if match:
+            return int(
+                match.group(1).replace(",", "")
+            )
+
+        if re.search(
+            r"no\s+contributions",
+            str(value),
+            re.IGNORECASE,
+        ):
+            return 0
+
+    return None
+
+
+def extract_calendar_labels(soup):
+    pattern = re.compile(
+        r"("
+        r"\d[\d,]*\s+contributions?"
+        r"|no\s+contributions"
+        r")"
+        r"\s+on\s+"
+        r"([A-Za-z]+)"
+        r"\s+"
+        r"(\d{1,2})(?:st|nd|rd|th)?",
+        re.IGNORECASE,
     )
 
-    if first_day.month != previous_month:
+    labels = []
 
-        month_labels.append(
+    text = soup.get_text(
+        " ",
+        strip=True,
+    )
+
+    for match in pattern.finditer(text):
+
+        count_text = match.group(1)
+        month_text = match.group(2)
+        day_text = match.group(3)
+
+        month = MONTHS.get(
+            month_text.lower()
+        )
+
+        if not month:
+            continue
+
+        day = int(day_text)
+
+        if re.match(
+            r"no\s+contributions",
+            count_text,
+            re.IGNORECASE,
+        ):
+            count = 0
+
+        else:
+            number = re.search(
+                r"(\d[\d,]*)",
+                count_text,
+            )
+
+            if not number:
+                continue
+
+            count = int(
+                number.group(1).replace(",", "")
+            )
+
+        labels.append(
+            {
+                "month": month,
+                "day": day,
+                "count": count,
+            }
+        )
+
+    return labels
+
+
+def main():
+
+    print()
+    print("=" * 64)
+    print("SEAN ANDRADES // CONTRIBUTION DATA SYNC")
+    print("=" * 64)
+    print()
+
+    print(f"Fetching: {URL}")
+    print()
+
+    response = requests.get(
+        URL,
+        headers=HEADERS,
+        timeout=30,
+    )
+
+    response.raise_for_status()
+
+    soup = BeautifulSoup(
+        response.text,
+        "html.parser",
+    )
+
+    cells = soup.select(
+        "[data-date][data-level]"
+    )
+
+    if not cells:
+        cells = soup.select(
+            ".ContributionCalendar-day"
+        )
+
+    if not cells:
+        raise RuntimeError(
+            "Could not find contribution calendar cells."
+        )
+
+    print(
+        f"Calendar cells found: {len(cells)}"
+    )
+
+    labels = extract_calendar_labels(
+        soup
+    )
+
+    print(
+        f"Contribution descriptions found: "
+        f"{len(labels)}"
+    )
+
+    if not labels:
+        raise RuntimeError(
+            "GitHub returned calendar cells but "
+            "no contribution descriptions could "
+            "be parsed."
+        )
+
+    label_map = {}
+
+    for label in labels:
+
+        key = (
+            label["month"],
+            label["day"],
+        )
+
+        label_map.setdefault(
+            key,
+            [],
+        ).append(
+            label["count"]
+        )
+
+    days = []
+
+    for cell in cells:
+
+        contribution_date = cell.get(
+            "data-date"
+        )
+
+        if not contribution_date:
+            continue
+
+        if not re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}",
+            contribution_date,
+        ):
+            continue
+
+        level_raw = cell.get(
+            "data-level",
+            "0",
+        )
+
+        try:
+            level = int(level_raw)
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+            level = 0
+
+        count = get_count_from_element(
+            cell
+        )
+
+        if count is None:
+
+            parsed_date = datetime.strptime(
+                contribution_date,
+                "%Y-%m-%d",
+            ).date()
+
+            key = (
+                parsed_date.month,
+                parsed_date.day,
+            )
+
+            queue = label_map.get(
+                key,
+                [],
+            )
+
+            if queue:
+                count = queue.pop(0)
+
+        if count is None and level == 0:
+            count = 0
+
+        if count is None:
+            raise RuntimeError(
+                "Could not determine the contribution "
+                f"count for {contribution_date} "
+                f"(level={level})."
+            )
+
+        days.append(
+            {
+                "date": contribution_date,
+                "count": int(count),
+                "level": level,
+            }
+        )
+
+    unique = {}
+
+    for item in days:
+        unique[item["date"]] = item
+
+    days = list(
+        unique.values()
+    )
+
+    days.sort(
+        key=lambda item: item["date"]
+    )
+
+    total = sum(
+        item["count"]
+        for item in days
+    )
+
+    active_days = sum(
+        1
+        for item in days
+        if item["count"] > 0
+    )
+
+    # If multiple days have the same maximum,
+    # choose the most recent one.
+    best_day = max(
+        days,
+        key=lambda item: (
+            item["count"],
+            item["date"],
+        ),
+    )
+
+    latest = datetime.strptime(
+        days[-1]["date"],
+        "%Y-%m-%d",
+    ).date()
+
+    streak = 0
+
+    cursor = latest
+
+    while True:
+
+        matching = next(
             (
-                column,
-                first_day.strftime("%b").upper()
-            )
+                item
+                for item in days
+                if item["date"]
+                == cursor.isoformat()
+            ),
+            None,
         )
 
-        previous_month = first_day.month
+        if not matching:
+            break
 
+        if matching["count"] <= 0:
+            break
 
-# ============================================================
-# SVG START
-# ============================================================
+        streak += 1
 
-svg = f'''<svg
-xmlns="http://www.w3.org/2000/svg"
-width="{WIDTH}"
-height="{HEIGHT}"
-viewBox="0 0 {WIDTH} {HEIGHT}">
-
-<defs>
-
-<!-- ====================================================== -->
-<!-- BACKGROUND -->
-<!-- ====================================================== -->
-
-<linearGradient
-id="background"
-x1="0"
-y1="0"
-x2="1"
-y2="1">
-
-    <stop
-    offset="0%"
-    stop-color="#04070a"/>
-
-    <stop
-    offset="50%"
-    stop-color="#0a1016"/>
-
-    <stop
-    offset="100%"
-    stop-color="#04070a"/>
-
-</linearGradient>
-
-
-<!-- ====================================================== -->
-<!-- TITLE -->
-<!-- ====================================================== -->
-
-<linearGradient
-id="title"
-x1="0"
-y1="0"
-x2="1"
-y2="0">
-
-    <stop
-    offset="0%"
-    stop-color="#39d353"/>
-
-    <stop
-    offset="50%"
-    stop-color="#7ee787"/>
-
-    <stop
-    offset="100%"
-    stop-color="#39d353"/>
-
-</linearGradient>
-
-
-<!-- ====================================================== -->
-<!-- GLOW -->
-<!-- ====================================================== -->
-
-<filter id="glow">
-
-    <feGaussianBlur
-    stdDeviation="3"
-    result="blur"/>
-
-    <feMerge>
-
-        <feMergeNode
-        in="blur"/>
-
-        <feMergeNode
-        in="SourceGraphic"/>
-
-    </feMerge>
-
-</filter>
-
-
-<!-- ====================================================== -->
-<!-- GRID -->
-<!-- ====================================================== -->
-
-<pattern
-id="grid"
-width="32"
-height="32"
-patternUnits="userSpaceOnUse">
-
-    <path
-    d="M 32 0 L 0 0 0 32"
-    fill="none"
-    stroke="#39d353"
-    stroke-width="0.5"
-    opacity="0.035"/>
-
-</pattern>
-
-
-<!-- ====================================================== -->
-<!-- SCANLINES -->
-<!-- ====================================================== -->
-
-<pattern
-id="scanlines"
-width="5"
-height="5"
-patternUnits="userSpaceOnUse">
-
-    <rect
-    width="5"
-    height="1"
-    fill="white"
-    opacity="0.018"/>
-
-</pattern>
-
-</defs>
-
-
-<!-- ====================================================== -->
-<!-- BACKGROUND -->
-<!-- ====================================================== -->
-
-<rect
-width="100%"
-height="100%"
-rx="22"
-fill="url(#background)"/>
-
-<rect
-width="100%"
-height="100%"
-rx="22"
-fill="url(#grid)"/>
-
-<rect
-width="100%"
-height="100%"
-rx="22"
-fill="url(#scanlines)"/>
-
-
-<!-- ====================================================== -->
-<!-- BORDER -->
-<!-- ====================================================== -->
-
-<rect
-x="1"
-y="1"
-width="{WIDTH - 2}"
-height="{HEIGHT - 2}"
-rx="22"
-fill="none"
-stroke="#30363d"
-stroke-width="2"/>
-
-
-<!-- ====================================================== -->
-<!-- WINDOW CONTROLS -->
-<!-- ====================================================== -->
-
-<circle
-cx="28"
-cy="28"
-r="7"
-fill="#ff5f56"/>
-
-<circle
-cx="51"
-cy="28"
-r="7"
-fill="#ffbd2e"/>
-
-<circle
-cx="74"
-cy="28"
-r="7"
-fill="#27c93f"/>
-
-
-<!-- ====================================================== -->
-<!-- BRAND -->
-<!-- ====================================================== -->
-
-<text
-x="100"
-y="33"
-font-family="monospace"
-font-size="13"
-fill="#6e7681">
-
-SEAN ANDRADES  //  GITHUB TELEMETRY
-
-</text>
-
-
-<!-- ====================================================== -->
-<!-- TITLE -->
-<!-- ====================================================== -->
-
-<text
-x="28"
-y="78"
-font-family="monospace"
-font-size="27"
-font-weight="bold"
-fill="url(#title)"
-filter="url(#glow)">
-
-CONTRIBUTION MATRIX
-
-</text>
-
-
-<!-- ====================================================== -->
-<!-- STATUS -->
-<!-- ====================================================== -->
-
-<circle
-cx="{WIDTH - 105}"
-cy="68"
-r="5"
-fill="#39d353">
-
-<animate
-attributeName="opacity"
-values="1;0.25;1"
-dur="1.5s"
-repeatCount="indefinite"/>
-
-</circle>
-
-
-<text
-x="{WIDTH - 91}"
-y="73"
-font-family="monospace"
-font-size="11"
-fill="#7ee787">
-
-AUTO-SYNC
-
-</text>
-
-
-<!-- ====================================================== -->
-<!-- SUBTITLE -->
-<!-- ====================================================== -->
-
-<text
-x="30"
-y="105"
-font-family="monospace"
-font-size="11"
-fill="#8b949e">
-
-GITHUB ACTIVITY  /  LAST YEAR  /  VERIFIED DATA
-
-</text>
-
-
-<!-- ====================================================== -->
-<!-- STAT CARDS -->
-<!-- ====================================================== -->
-
-<rect
-x="25"
-y="122"
-width="175"
-height="48"
-rx="9"
-fill="#0d1117"
-stroke="#30363d"/>
-
-<rect
-x="210"
-y="122"
-width="175"
-height="48"
-rx="9"
-fill="#0d1117"
-stroke="#30363d"/>
-
-<rect
-x="395"
-y="122"
-width="175"
-height="48"
-rx="9"
-fill="#0d1117"
-stroke="#30363d"/>
-
-
-<!-- TOTAL -->
-
-<text
-x="38"
-y="141"
-font-family="monospace"
-font-size="9"
-fill="#6e7681">
-
-CONTRIBUTIONS
-
-</text>
-
-<text
-x="38"
-y="160"
-font-family="monospace"
-font-size="16"
-font-weight="bold"
-fill="#39d353">
-
-{TOTAL:,}
-
-</text>
-
-
-<!-- ACTIVE -->
-
-<text
-x="223"
-y="141"
-font-family="monospace"
-font-size="9"
-fill="#6e7681">
-
-ACTIVE DAYS
-
-</text>
-
-<text
-x="223"
-y="160"
-font-family="monospace"
-font-size="16"
-font-weight="bold"
-fill="#39d353">
-
-{ACTIVE}
-
-</text>
-
-
-<!-- STREAK -->
-
-<text
-x="408"
-y="141"
-font-family="monospace"
-font-size="9"
-fill="#6e7681">
-
-CURRENT STREAK
-
-</text>
-
-<text
-x="408"
-y="160"
-font-family="monospace"
-font-size="16"
-font-weight="bold"
-fill="#39d353">
-
-{STREAK} DAYS
-
-</text>
-
-'''
-
-
-# ============================================================
-# MONTH LABELS
-# ============================================================
-
-for column, label in month_labels:
-
-    x = LEFT + column * STEP
-
-    svg += f'''
-<text
-x="{x}"
-y="{TOP - 20}"
-font-family="monospace"
-font-size="9"
-fill="#8b949e">
-
-{label}
-
-</text>
-'''
-
-
-# ============================================================
-# DAY LABELS
-# ============================================================
-
-for label, row in [
-    ("MON", 1),
-    ("WED", 3),
-    ("FRI", 5),
-]:
-
-    y = TOP + row * STEP + 12
-
-    svg += f'''
-<text
-x="25"
-y="{y}"
-font-family="monospace"
-font-size="9"
-fill="#6e7681">
-
-{label}
-
-</text>
-'''
-
-
-# ============================================================
-# CONTRIBUTION CELLS
-# ============================================================
-
-animation_index = 0
-
-for column, week in enumerate(weeks):
-
-    for row, item in enumerate(week):
-
-        x = LEFT + column * STEP
-        y = TOP + row * STEP
-
-        level = max(
-            0,
-            min(
-                4,
-                int(item.get("level", 0))
-            )
+        cursor = cursor.fromordinal(
+            cursor.toordinal() - 1
         )
 
-        count = int(
-            item.get("count", 0)
+    active_levels = sum(
+        1
+        for item in days
+        if item["level"] > 0
+    )
+
+    if active_levels > 0 and total == 0:
+
+        raise RuntimeError(
+            "SAFETY CHECK FAILED.\n"
+            f"GitHub returned {active_levels} "
+            "active cells but the calculated "
+            "total is zero."
         )
 
-        color = PALETTE[level]
+    output = {
+        "username": USERNAME,
+        "generated_at": (
+            datetime.now(
+                timezone.utc
+            ).isoformat()
+        ),
+        "total_contributions": total,
+        "active_days": active_days,
+        "current_streak": streak,
+        "best_day": best_day,
+        "days": days,
+    }
 
-        delay = animation_index * 0.007
+    OUTPUT.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-        svg += f'''
-<rect
-x="{x}"
-y="{y}"
-width="{CELL}"
-height="{CELL}"
-rx="4"
-fill="{color}"
-stroke="#30363d"
-stroke-width="0.5"
-opacity="0">
+    OUTPUT.write_text(
+        json.dumps(
+            output,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
-<title>
-{escape(item["date"])} — {count} contribution{"s" if count != 1 else ""}
-</title>
+    print()
+    print("=" * 64)
+    print("SYNC COMPLETE")
+    print("=" * 64)
 
-<animate
-attributeName="opacity"
-from="0"
-to="1"
-dur="0.28s"
-begin="{delay:.3f}s"
-fill="freeze"/>
+    print(
+        f"Calendar days : {len(days)}"
+    )
 
-</rect>
-'''
+    print(
+        f"Contributions : {total:,}"
+    )
 
-        animation_index += 1
+    print(
+        f"Active days   : {active_days}"
+    )
 
+    print(
+        f"Current streak: {streak}"
+    )
 
-# ============================================================
-# BOTTOM SECTION
-# ============================================================
+    print(
+        f"Peak day      : {best_day['date']}"
+    )
 
-bottom = TOP + GRID_HEIGHT + 35
+    print(
+        f"Peak count    : {best_day['count']}"
+    )
 
+    print(
+        f"Active cells  : {active_levels}"
+    )
 
-svg += f'''
+    print("-" * 64)
 
-<line
-x1="25"
-y1="{bottom - 15}"
-x2="{WIDTH - 25}"
-y2="{bottom - 15}"
-stroke="#30363d"/>
+    print(
+        f"Saved to      : {OUTPUT}"
+    )
 
-
-<!-- PEAK -->
-
-<text
-x="25"
-y="{bottom + 5}"
-font-family="monospace"
-font-size="9"
-fill="#6e7681">
-
-PEAK ACTIVITY
-
-</text>
-
-
-<text
-x="25"
-y="{bottom + 27}"
-font-family="monospace"
-font-size="12"
-fill="#39d353">
-
-{escape(BEST["date"])}  //  {BEST["count"]} CONTRIBUTIONS
-
-</text>
+    print()
 
 
-<!-- LEGEND -->
-
-<text
-x="{WIDTH - 245}"
-y="{bottom + 5}"
-font-family="monospace"
-font-size="9"
-fill="#6e7681">
-
-ACTIVITY LEVEL
-
-</text>
-'''
-
-
-legend_x = WIDTH - 245
-
-for level in range(5):
-
-    x = legend_x + 5 + level * 24
-
-    svg += f'''
-<rect
-x="{x}"
-y="{bottom + 15}"
-width="16"
-height="16"
-rx="4"
-fill="{PALETTE[level]}"/>
-'''
-
-
-svg += f'''
-
-<text
-x="{legend_x + 5}"
-y="{bottom + 47}"
-font-family="monospace"
-font-size="8"
-fill="#484f58">
-
-LESS
-
-</text>
-
-
-<text
-x="{legend_x + 101}"
-y="{bottom + 47}"
-font-family="monospace"
-font-size="8"
-fill="#484f58">
-
-MORE
-
-</text>
-
-
-<!-- ====================================================== -->
-<!-- FOOTER -->
-<!-- ====================================================== -->
-
-<text
-x="25"
-y="{HEIGHT - 17}"
-font-family="monospace"
-font-size="8"
-fill="#484f58">
-
-@seanandrades1701  •  AUTOMATED CONTRIBUTION TELEMETRY
-
-</text>
-
-</svg>
-'''
-
-
-# ============================================================
-# WRITE
-# ============================================================
-
-OUTPUT.write_text(
-    svg,
-    encoding="utf-8"
-)
-
-print()
-print("CONTRIBUTION MATRIX GENERATED")
-print("-" * 50)
-print(f"Contributions : {TOTAL:,}")
-print(f"Active days   : {ACTIVE}")
-print(f"Current streak: {STREAK}")
-print(
-    f"Peak activity : "
-    f"{BEST['date']} / {BEST['count']}"
-)
-print(f"Output        : {OUTPUT}")
-print()
+if __name__ == "__main__":
+    main()
