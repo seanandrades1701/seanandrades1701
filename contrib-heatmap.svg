@@ -317,7 +317,7 @@ font-size="16"
 font-weight="bold"
 fill="#39d353">
 
-56
+60
 
 </text>
 
@@ -343,7 +343,7 @@ font-size="16"
 font-weight="bold"
 fill="#39d353">
 
-23
+24
 
 </text>
 
@@ -369,7 +369,7 @@ font-size="16"
 font-weight="bold"
 fill="#39d353">
 
-0 DAYS
+7 DAYS
 
 </text>
 
@@ -9656,13 +9656,13 @@ y="235"
 width="17"
 height="17"
 rx="4"
-fill="#111820"
+fill="#176b35"
 stroke="#30363d"
 stroke-width="0.5"
 opacity="0">
 
 <title>
-2026-09-27 — 0 contributions
+2026-09-27 — 4 contributions
 </title>
 
 <animate
